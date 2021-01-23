@@ -172,7 +172,7 @@ def rebalance_portfolio():
                 # I want to decrease my position. Calculate how many shares to sell and
                 # round up to the nearest integer value
                 if stock in tradable_symbols:
-                    qty = target_qty - current_qty
+                    qty = current_qty - target_qty
                     print(
                         f'Go from {current_qty} shares to {target_qty} shares of {stock}. '
                         f'Target dollar amount: ${round(price*(qty), 2)}'
