@@ -65,18 +65,19 @@ Goal: Set up a professional project layout and automated quality gates.
 Goal: Evaluate strategies on historical data before deploying with real capital.
 
 ### 3.1 — Core Backtesting Engine
-- [ ] Build a backtesting module that replays historical data through a strategy and records simulated trades
-- [ ] Track key metrics: total return, annualized return, Sharpe ratio, max drawdown, volatility
-- [ ] Support configurable date ranges and initial capital amounts
+- [x] `backtests/engine.py`: `Backtester` class replays historical data through any weight function and records simulated trades
+- [x] `backtests/metrics.py`: total return, annualized return (CAGR), Sharpe ratio, max drawdown, annualized volatility
+- [x] `BacktestConfig` supports configurable date ranges, initial capital, rebalance frequency, lookback period, and risk-free rate
+- [x] 25 new tests (60 total) covering engine, metrics, and edge cases
 
 ### 3.2 — Backtest the GMV Strategy
-- [ ] Run the GMV strategy over 1-year, 3-year, 5-year, and 10-year windows
-- [ ] Compare performance against a simple S&P 100 equal-weight benchmark
-- [ ] Generate performance reports (text or HTML)
+- [x] `backtests/run_gmv_backtest.py`: runs GMV over 1-year, 3-year, 5-year, and 10-year windows (`python -m backtests.run_gmv_backtest`)
+- [x] Equal-weight benchmark runs side by side for comparison
+- [x] `backtests/report.py`: generates both text and HTML performance reports with comparison tables
 
 ### 3.3 — Visualization
-- [ ] Plot equity curves, drawdown charts, and weight allocation over time
-- [ ] Optional: Jupyter notebook for interactive exploration
+- [x] `backtests/visualize.py`: equity curves, drawdown charts, and weight allocation stacked area plots (matplotlib, Agg backend)
+- [ ] Optional: Jupyter notebook for interactive exploration (future enhancement)
 
 ---
 
@@ -148,7 +149,7 @@ Goal: Longer-term enhancements once the core platform is solid.
 |-------|-------|----------|
 | 1 | Stabilize & harden existing code | **Done** |
 | 2 | Project structure & CI/CD | **Done** |
-| 3 | Backtesting framework | **Medium-High** |
+| 3 | Backtesting framework | **Done** |
 | 4 | New strategies | **Medium** |
 | 5 | Risk management & monitoring | **Medium** |
 | 6 | Advanced features | **Low — future** |
