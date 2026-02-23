@@ -11,25 +11,25 @@ The project has a single trading algorithm (`gmv_algo.py`) implementing a **Glob
 Goal: Make the existing code production-grade before adding new features.
 
 ### 1.1 — Dependency Management
-- [ ] Add `requirements.txt` (or `pyproject.toml`) pinning all dependencies (`alpaca-trade-api`, `yfinance`, `numpy`, `pandas`, `scipy`, `pytz`, `python-dateutil`)
-- [ ] Add a dev-dependencies section for linting/testing tools (`pytest`, `ruff`, `mypy`)
+- [x] Add `requirements.txt` pinning all dependencies (`alpaca-trade-api`, `yfinance`, `numpy`, `pandas`, `scipy`, `pytz`, `python-dateutil`)
+- [x] Add `requirements-dev.txt` for linting/testing tools (`pytest`, `pytest-cov`, `ruff`, `mypy`)
 
 ### 1.2 — Fix Known Issues in `gmv_algo.py`
-- [ ] Replace bare `except:` clauses with specific exception types
-- [ ] Migrate from deprecated `get_barset()` to `get_bars()` (Alpaca v2 data API)
-- [ ] Validate that required environment variables (`API_KEY`, `API_SECRET`) are set on startup, with clear error messages
-- [ ] Replace `print()` calls with Python `logging` module at appropriate levels (INFO, WARNING, ERROR)
+- [x] Replace bare `except:` clauses with specific exception types (`APIError`, `KeyError`, `IndexError`, `ZeroDivisionError`)
+- [x] Migrate from deprecated `get_barset()` to `get_snapshots()` (Alpaca v2 data API)
+- [x] Validate that required environment variables (`API_KEY`, `API_SECRET`) are set on startup, with clear error messages
+- [x] Replace `print()` calls with Python `logging` module at appropriate levels (INFO, WARNING, ERROR)
 
 ### 1.3 — Configuration
-- [ ] Extract hardcoded values into a configuration layer (base URL, ticker source, lookback period, rebalance frequency)
-- [ ] Support switching between paper and live trading via config/environment variable
-- [ ] Move magic numbers (e.g., rounding precision `5`, `relativedelta(years=5)`) into named constants
+- [x] Extract hardcoded values into `config.py` (base URL, ticker source, lookback period)
+- [x] Support switching between paper and live trading via `TRADING_MODE` environment variable
+- [x] Move magic numbers (e.g., rounding precision `5`, `relativedelta(years=5)`) into named constants
 
 ### 1.4 — Testing
-- [ ] Add unit tests for pure math functions (`portfolio_return`, `portfolio_vol`, `gmv`, `msr`)
-- [ ] Add integration tests with mocked Alpaca API responses for `rebalance_portfolio`
-- [ ] Add a test for the `submitOrder` function with mocked API
-- [ ] Target ≥80% code coverage
+- [x] Add unit tests for pure math functions (`portfolio_return`, `portfolio_vol`, `gmv`, `msr`)
+- [x] Add integration tests with mocked Alpaca API responses for `rebalance_portfolio`
+- [x] Add tests for `submit_order` function with mocked API
+- [x] Achieved 89% code coverage (target was ≥80%)
 
 ---
 
@@ -164,7 +164,7 @@ Goal: Longer-term enhancements once the core platform is solid.
 
 | Phase | Focus | Priority |
 |-------|-------|----------|
-| 1 | Stabilize & harden existing code | **High — do first** |
+| 1 | Stabilize & harden existing code | **Done** |
 | 2 | Project structure & CI/CD | **High** |
 | 3 | Backtesting framework | **Medium-High** |
 | 4 | New strategies | **Medium** |
