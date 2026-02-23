@@ -8,6 +8,7 @@ import pandas as pd
 from alpaca_trading.client import create_client
 from alpaca_trading.data import get_historical_returns, get_sp100_tickers
 from alpaca_trading.execution import build_orders, execute_orders
+from alpaca_trading.notifications import format_summary, send_rebalance_summary
 from alpaca_trading.strategies import GMVStrategy
 
 logger = logging.getLogger(__name__)
@@ -77,10 +78,16 @@ def rebalance_portfolio(strategy=None):
     price_df = api.get_barset(stocks, "minute", 1).df
 
     # Build and execute orders
-    orders_df = build_orders(stocks, dollar_amounts, positions_df, price_df, tradable_symbols)
+    orders_df = build_orders(
+        stocks, dollar_amounts, positions_df, price_df, tradable_symbols,
+        portfolio_value=portfolio_value,
+    )
     execute_orders(api, orders_df)
 
     logger.info("Rebalance complete. %d orders submitted.", len(orders_df))
+    logger.info("\n%s", format_summary(orders_df, portfolio_value, strategy.name))
+    send_rebalance_summary(orders_df, portfolio_value, strategy.name)
+
     return orders_df.to_json()
 
 

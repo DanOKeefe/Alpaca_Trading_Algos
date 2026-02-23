@@ -4,6 +4,8 @@ import logging
 
 import pandas as pd
 
+from alpaca_trading.config import ESTIMATED_COST_PER_DOLLAR, REBALANCE_THRESHOLD
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,8 +29,53 @@ def submit_order(api, qty, stock, side):
         logger.error("Order failed (%s %d %s): %s", side, qty, stock, e)
 
 
-def build_orders(stocks, target_values, positions_df, price_df, tradable_symbols):
+def _should_rebalance(current_value, target_value, portfolio_value, cost_per_dollar):
+    """Decide whether a position change is worth executing.
+
+    Skips the trade if:
+    1. The drift is below the rebalance threshold, OR
+    2. The estimated transaction cost exceeds the dollar benefit of rebalancing.
+
+    Args:
+        current_value: current dollar value of the position.
+        target_value: target dollar value of the position.
+        portfolio_value: total portfolio value.
+        cost_per_dollar: estimated cost per dollar traded (e.g. 0.001).
+
+    Returns:
+        (should_trade, reason) tuple.
+    """
+    if portfolio_value <= 0:
+        return False, "portfolio_value is zero"
+
+    trade_value = abs(target_value - current_value)
+    drift = trade_value / portfolio_value
+
+    if drift < REBALANCE_THRESHOLD:
+        return False, f"drift {drift:.4f} below threshold {REBALANCE_THRESHOLD}"
+
+    trade_cost = trade_value * cost_per_dollar
+    # Benefit is proportional to drift squared (variance reduction)
+    # but as a simple heuristic, if cost > trade_value * threshold, skip
+    if trade_cost > trade_value * REBALANCE_THRESHOLD:
+        return False, f"trade cost ${trade_cost:.2f} exceeds benefit"
+
+    return True, "ok"
+
+
+def build_orders(
+    stocks,
+    target_values,
+    positions_df,
+    price_df,
+    tradable_symbols,
+    portfolio_value=0,
+    cost_per_dollar=ESTIMATED_COST_PER_DOLLAR,
+):
     """Compare target positions to current holdings and build an order list.
+
+    Filters out trades that are below the rebalance threshold or where
+    estimated transaction costs exceed the benefit.
 
     Args:
         stocks: list of ticker symbols.
@@ -36,11 +83,14 @@ def build_orders(stocks, target_values, positions_df, price_df, tradable_symbols
         positions_df: DataFrame with columns ['Symbol', 'Qty'].
         price_df: DataFrame of current prices from Alpaca.
         tradable_symbols: list of tradable ticker symbols.
+        portfolio_value: total portfolio value (for threshold calculation).
+        cost_per_dollar: estimated cost per dollar traded.
 
     Returns:
         DataFrame with columns ['Side', 'Ticker', 'Qty'].
     """
     orders = {"Side": [], "Ticker": [], "Qty": []}
+    skipped = 0
 
     for stock, target_value in zip(stocks, target_values):
         if stock not in tradable_symbols:
@@ -58,34 +108,40 @@ def build_orders(stocks, target_values, positions_df, price_df, tradable_symbols
                 current_qty = 0
 
             diff = target_qty - current_qty
+            if diff == 0:
+                continue
 
-            if diff > 0:
-                logger.info(
-                    "%s: %d -> %d shares (buy %d, ~$%.2f)",
-                    stock,
-                    current_qty,
-                    target_qty,
-                    diff,
-                    price * diff,
+            # Check rebalance threshold and transaction cost
+            current_value = current_qty * price
+            if portfolio_value > 0:
+                should_trade, reason = _should_rebalance(
+                    current_value, target_value, portfolio_value, cost_per_dollar
                 )
-                orders["Side"].append("Buy")
-                orders["Ticker"].append(stock)
-                orders["Qty"].append(diff)
-            elif diff < 0:
-                qty = abs(diff)
-                logger.info(
-                    "%s: %d -> %d shares (sell %d, ~$%.2f)",
-                    stock,
-                    current_qty,
-                    target_qty,
-                    qty,
-                    price * qty,
-                )
-                orders["Side"].append("Sell")
-                orders["Ticker"].append(stock)
-                orders["Qty"].append(qty)
+                if not should_trade:
+                    logger.debug("Skipping %s: %s", stock, reason)
+                    skipped += 1
+                    continue
+
+            trade_qty = abs(diff)
+            side = "Buy" if diff > 0 else "Sell"
+            logger.info(
+                "%s: %d -> %d shares (%s %d, ~$%.2f)",
+                stock,
+                current_qty,
+                target_qty,
+                side.lower(),
+                trade_qty,
+                price * trade_qty,
+            )
+            orders["Side"].append(side)
+            orders["Ticker"].append(stock)
+            orders["Qty"].append(trade_qty)
+
         except Exception as e:
             logger.warning("Could not process %s: %s", stock, e)
+
+    if skipped:
+        logger.info("Skipped %d positions below rebalance threshold", skipped)
 
     return pd.DataFrame(orders)
 

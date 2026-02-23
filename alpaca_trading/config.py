@@ -13,6 +13,12 @@ MAX_WEIGHT_PER_STOCK = 0.10  # 10% max allocation to any single stock
 REBALANCE_THRESHOLD = 0.02  # 2% drift threshold before rebalancing a position
 HISTORICAL_YEARS = 5  # years of price history to download
 
+# Transaction cost estimate (commission + half spread) per dollar traded
+ESTIMATED_COST_PER_DOLLAR = 0.001  # 0.1% round-trip cost estimate
+
+# Notifications
+SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN")  # optional; set to enable notifications
+
 
 def get_api_credentials():
     """Retrieve Alpaca API credentials from environment variables."""
