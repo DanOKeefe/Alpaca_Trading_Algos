@@ -16,6 +16,12 @@ HISTORICAL_YEARS = 5  # years of price history to download
 # Transaction cost estimate (commission + half spread) per dollar traded
 ESTIMATED_COST_PER_DOLLAR = 0.001  # 0.1% round-trip cost estimate
 
+# Stock universe (default: "sp100"; also supports "sp500" or comma-separated tickers)
+STOCK_UNIVERSE = os.environ.get("STOCK_UNIVERSE", "sp100")
+
+# S3 data cache (optional; set bucket name to enable caching of historical data)
+S3_CACHE_BUCKET = os.environ.get("S3_CACHE_BUCKET")
+
 # Notifications
 SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN")  # optional; set to enable notifications
 

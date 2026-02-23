@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from alpaca_trading.client import create_client
-from alpaca_trading.data import get_historical_returns, get_sp100_tickers
+from alpaca_trading.data import get_historical_returns, get_tickers
 from alpaca_trading.execution import build_orders, execute_orders
 from alpaca_trading.notifications import format_summary, send_rebalance_summary
 from alpaca_trading.strategies import (
@@ -23,11 +23,13 @@ logging.basicConfig(
 )
 
 
-def rebalance_portfolio(strategy=None):
+def rebalance_portfolio(strategy=None, universe=None):
     """Run the full rebalancing workflow.
 
     Args:
         strategy: a Strategy instance. Defaults to GMVStrategy.
+        universe: stock universe ("sp100", "sp500", or comma-separated tickers).
+            Defaults to config.STOCK_UNIVERSE.
 
     Returns:
         JSON string of executed orders.
@@ -46,7 +48,7 @@ def rebalance_portfolio(strategy=None):
         return "Stock market is closed today."
 
     # Get tickers and historical data
-    tickers = get_sp100_tickers()
+    tickers = get_tickers(universe) if universe else get_tickers()
     returns = get_historical_returns(tickers)
 
     # Compute target weights
@@ -107,5 +109,7 @@ def lambda_handler(event, context):
         "risk_parity": RiskParityStrategy,
     }
 
+    universe = (event or {}).get("universe")
+
     strategy_cls = strategies.get(strategy_name, GMVStrategy)
-    return rebalance_portfolio(strategy=strategy_cls())
+    return rebalance_portfolio(strategy=strategy_cls(), universe=universe)
