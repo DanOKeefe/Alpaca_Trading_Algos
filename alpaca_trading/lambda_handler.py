@@ -9,7 +9,12 @@ from alpaca_trading.client import create_client
 from alpaca_trading.data import get_historical_returns, get_sp100_tickers
 from alpaca_trading.execution import build_orders, execute_orders
 from alpaca_trading.notifications import format_summary, send_rebalance_summary
-from alpaca_trading.strategies import GMVStrategy
+from alpaca_trading.strategies import (
+    EqualWeightStrategy,
+    GMVStrategy,
+    MSRStrategy,
+    RiskParityStrategy,
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -97,6 +102,9 @@ def lambda_handler(event, context):
 
     strategies = {
         "gmv": GMVStrategy,
+        "msr": MSRStrategy,
+        "equal_weight": EqualWeightStrategy,
+        "risk_parity": RiskParityStrategy,
     }
 
     strategy_cls = strategies.get(strategy_name, GMVStrategy)
