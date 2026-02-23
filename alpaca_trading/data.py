@@ -142,6 +142,10 @@ def get_historical_returns(tickers, years=HISTORICAL_YEARS):
         data = yf.download(ticker_str, start=start_str, end=end_str)
         adj_close = data["Adj Close"]
 
+        # yfinance returns a Series for a single ticker; ensure it's a DataFrame
+        if isinstance(adj_close, pd.Series):
+            adj_close = adj_close.to_frame(name=tickers[0])
+
         # Cache the flat Adj Close DataFrame (avoids MultiIndex parquet issues)
         if S3_CACHE_BUCKET and cache_key:
             _save_to_s3(adj_close, S3_CACHE_BUCKET, cache_key)

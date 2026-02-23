@@ -1,6 +1,5 @@
 """Post-rebalance notifications via AWS SNS."""
 
-import json
 import logging
 
 from alpaca_trading.config import SNS_TOPIC_ARN

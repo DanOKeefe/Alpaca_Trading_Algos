@@ -1,7 +1,6 @@
 """Portfolio performance metrics."""
 
 import numpy as np
-import pandas as pd
 
 
 def annualized_return(daily_returns):
