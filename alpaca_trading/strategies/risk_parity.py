@@ -25,6 +25,8 @@ class RiskParityStrategy(Strategy):
 
     def compute_weights(self, returns: pd.DataFrame) -> np.ndarray:
         vols = returns.std()
+        # Replace zero volatilities with a small value to avoid division by zero
+        vols = vols.clip(lower=1e-10)
         # Inverse volatility weights
         inv_vol = 1.0 / vols
         weights = inv_vol / inv_vol.sum()

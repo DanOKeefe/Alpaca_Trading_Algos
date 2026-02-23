@@ -120,15 +120,15 @@ def get_historical_returns(tickers, years=HISTORICAL_YEARS):
     start_str = start_date.strftime("%Y-%m-%d")
     end_str = end_date.strftime("%Y-%m-%d")
 
-    # Try S3 cache
-    data = None
+    # Try S3 cache (caches Adj Close prices as a flat DataFrame)
+    adj_close = None
     cache_key = None
     if S3_CACHE_BUCKET:
         cache_key = _s3_cache_key(tickers, start_str, end_str)
-        data = _load_from_s3(S3_CACHE_BUCKET, cache_key)
+        adj_close = _load_from_s3(S3_CACHE_BUCKET, cache_key)
 
     # Download from yfinance if no cache hit
-    if data is None:
+    if adj_close is None:
         ticker_str = " ".join(tickers)
         logger.info(
             "Downloading %d years of data for %d tickers (%s to %s)",
@@ -140,12 +140,13 @@ def get_historical_returns(tickers, years=HISTORICAL_YEARS):
         import yfinance as yf
 
         data = yf.download(ticker_str, start=start_str, end=end_str)
+        adj_close = data["Adj Close"]
 
-        # Save to S3 cache
+        # Cache the flat Adj Close DataFrame (avoids MultiIndex parquet issues)
         if S3_CACHE_BUCKET and cache_key:
-            _save_to_s3(data, S3_CACHE_BUCKET, cache_key)
+            _save_to_s3(adj_close, S3_CACHE_BUCKET, cache_key)
 
-    rets = data["Adj Close"].pct_change()
+    rets = adj_close.pct_change()
     rets.dropna(axis=1, inplace=True, how="all")
     rets.dropna(axis=0, inplace=True, how="all")
 

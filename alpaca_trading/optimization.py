@@ -50,6 +50,8 @@ def msr(riskfree_rate, er, cov):
     def neg_sharpe(weights, riskfree_rate, er, cov):
         r = portfolio_return(weights, er)
         vol = portfolio_vol(weights, cov)
+        if vol < 1e-12:
+            return 0.0
         return -(r - riskfree_rate) / vol
 
     result = minimize(

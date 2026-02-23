@@ -2,7 +2,6 @@
 
 import logging
 
-import numpy as np
 import pandas as pd
 
 from alpaca_trading.client import create_client
@@ -64,11 +63,20 @@ def rebalance_portfolio(strategy=None, universe=None):
     if orders:
         logger.info("Cancelled %d open orders", len(orders))
 
-    # Filter to tradable stocks
-    stocks = list(returns.columns)
+    # Filter to tradable stocks (keeping dollar_amounts aligned)
+    all_stocks = list(returns.columns)
     assets = api.list_assets()
     tradable_symbols = [a.symbol for a in assets if a.tradable and a.status == "active"]
-    stocks = [s for s in stocks if s in tradable_symbols]
+
+    # Build aligned lists, filtering out non-tradable and GOOGL
+    stocks = []
+    aligned_amounts = []
+    for sym, amt in zip(all_stocks, dollar_amounts):
+        if sym == "GOOGL":
+            continue
+        if sym in tradable_symbols:
+            stocks.append(sym)
+            aligned_amounts.append(amt)
 
     # Current positions
     positions = api.list_positions()
@@ -79,14 +87,11 @@ def rebalance_portfolio(strategy=None, universe=None):
         }
     )
 
-    if "GOOGL" in stocks:
-        stocks.remove("GOOGL")
-
     price_df = api.get_barset(stocks, "minute", 1).df
 
     # Build and execute orders
     orders_df = build_orders(
-        stocks, dollar_amounts, positions_df, price_df, tradable_symbols,
+        stocks, aligned_amounts, positions_df, price_df, tradable_symbols,
         portfolio_value=portfolio_value,
     )
     execute_orders(api, orders_df)
