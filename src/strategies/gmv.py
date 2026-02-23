@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.optimize import minimize
 
 
@@ -55,3 +56,12 @@ def msr(riskfree_rate, er, cov):
         bounds=bounds,
     )
     return result.x
+
+
+class GMVStrategy:
+    """Global Minimum Variance — minimizes total portfolio volatility."""
+
+    name = "Global Minimum Variance"
+
+    def calculate_weights(self, returns: pd.DataFrame) -> np.ndarray:
+        return gmv(returns.cov())

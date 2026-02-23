@@ -1,5 +1,5 @@
 """
-Run GMV and equal-weight backtests over multiple time windows.
+Run all strategies against equal-weight benchmark over multiple time windows.
 
 Usage:
     python -m backtests.run_gmv_backtest
@@ -13,14 +13,15 @@ import numpy as np
 from backtests.engine import BacktestConfig, Backtester
 from backtests.report import comparison_table, html_report, text_report
 from backtests.visualize import plot_drawdowns, plot_equity_curves
-from src.strategies.gmv import gmv
+from src.strategies import (
+    BlackLittermanStrategy,
+    GMVStrategy,
+    MaxSharpeStrategy,
+    MomentumStrategy,
+    RiskParityStrategy,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def gmv_weight_fn(returns):
-    """Compute Global Minimum Variance weights from a returns DataFrame."""
-    return gmv(returns.cov())
 
 
 def equal_weight_fn(returns):
@@ -28,6 +29,15 @@ def equal_weight_fn(returns):
     n = returns.shape[1]
     return np.repeat(1 / n, n)
 
+
+# All strategies to benchmark
+STRATEGIES = [
+    GMVStrategy(),
+    MaxSharpeStrategy(),
+    RiskParityStrategy(),
+    MomentumStrategy(),
+    BlackLittermanStrategy(),
+]
 
 # S&P 100 tickers (subset for faster backtesting)
 SP100_SAMPLE = [
@@ -54,7 +64,7 @@ WINDOWS = [
 
 
 def run_all():
-    """Run GMV and equal-weight backtests over all windows."""
+    """Run all strategies and equal-weight benchmark over all windows."""
     all_results = []
 
     for label, start, end in WINDOWS:
@@ -66,10 +76,15 @@ def run_all():
             lookback_years=5,
         )
 
-        logger.info("Running GMV backtest: %s", label)
-        gmv_bt = Backtester(gmv_weight_fn, SP100_SAMPLE, config)
-        gmv_result = gmv_bt.run(strategy_name=f"GMV ({label})")
-        all_results.append(gmv_result)
+        for strategy in STRATEGIES:
+            logger.info("Running %s backtest: %s", strategy.name, label)
+            bt = Backtester(
+                strategy.calculate_weights, SP100_SAMPLE, config
+            )
+            result = bt.run(
+                strategy_name=f"{strategy.name} ({label})"
+            )
+            all_results.append(result)
 
         logger.info("Running Equal-Weight backtest: %s", label)
         ew_bt = Backtester(equal_weight_fn, SP100_SAMPLE, config)
@@ -92,15 +107,13 @@ def run_all():
     logger.info("HTML report saved to backtests/output/report.html")
 
     # Save charts for the longest window (10-year)
-    ten_yr_results = [r for r in all_results if "10 Years" in r.strategy_name]
-    if ten_yr_results:
+    ten_yr = [r for r in all_results if "10 Years" in r.strategy_name]
+    if ten_yr:
         plot_equity_curves(
-            ten_yr_results,
-            save_path="backtests/output/equity_curves.png",
+            ten_yr, save_path="backtests/output/equity_curves.png"
         )
         plot_drawdowns(
-            ten_yr_results,
-            save_path="backtests/output/drawdowns.png",
+            ten_yr, save_path="backtests/output/drawdowns.png"
         )
         logger.info("Charts saved to backtests/output/")
 

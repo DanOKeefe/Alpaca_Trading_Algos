@@ -10,7 +10,7 @@ from src.data.market_data import (
     get_latest_prices,
 )
 from src.execution.orders import submit_order
-from src.strategies.gmv import gmv
+from src.strategies.registry import get_strategy, list_strategies
 from src.utils.config import (
     DUPLICATE_TICKERS,
     WEIGHT_ROUNDING_PRECISION,
@@ -22,7 +22,10 @@ from src.utils.log_config import setup_logging
 logger = logging.getLogger(__name__)
 
 
-def rebalance_portfolio():
+def rebalance_portfolio(strategy_name="gmv"):
+    strategy = get_strategy(strategy_name)
+    logger.info("Using strategy: %s (%s)", strategy_name, strategy.name)
+
     api_key, api_secret = get_api_credentials()
     base_url = get_base_url()
     alpaca = tradeapi.REST(api_key, api_secret, base_url, 'v2')
@@ -36,7 +39,9 @@ def rebalance_portfolio():
     tickers = fetch_sp100_tickers()
     data, rets = download_returns(tickers)
 
-    weights = np.round(gmv(rets.cov()), WEIGHT_ROUNDING_PRECISION)
+    weights = np.round(
+        strategy.calculate_weights(rets), WEIGHT_ROUNDING_PRECISION
+    )
     portfolio_value = int(float(alpaca.get_account().portfolio_value))
     dollar_amounts = weights * portfolio_value
 
@@ -124,4 +129,10 @@ def rebalance_portfolio():
 
 def lambda_handler(event, context):
     setup_logging()
-    return rebalance_portfolio()
+    strategy_name = "gmv"
+    if event and isinstance(event, dict):
+        strategy_name = event.get("strategy", "gmv")
+    logger.info(
+        "Available strategies: %s", ", ".join(list_strategies())
+    )
+    return rebalance_portfolio(strategy_name=strategy_name)

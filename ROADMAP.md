@@ -86,18 +86,21 @@ Goal: Evaluate strategies on historical data before deploying with real capital.
 Goal: Expand beyond a single strategy to a multi-strategy platform.
 
 ### 4.1 — Strategy Interface
-- [ ] Define a base `Strategy` class/protocol with methods like `calculate_weights(data) -> np.ndarray` and `get_tickers() -> list[str]`
-- [ ] Refactor `gmv_algo.py` to conform to this interface
+- [x] `src/strategies/base.py`: `Strategy` Protocol with `name: str` and `calculate_weights(returns: pd.DataFrame) -> np.ndarray`
+- [x] `src/strategies/registry.py`: strategy registry with `register()`, `get_strategy()`, `list_strategies()`
+- [x] Refactored GMV as `GMVStrategy` class conforming to the Strategy protocol (legacy functions preserved)
 
 ### 4.2 — Additional Strategies
-- [ ] **Maximum Sharpe Ratio** — already partially implemented in `msr()`, expose it as a standalone strategy
-- [ ] **Risk Parity** — allocate such that each asset contributes equally to portfolio risk
-- [ ] **Momentum** — rank assets by trailing returns and go long the top decile
-- [ ] **Mean-Variance with Black-Litterman** — incorporate subjective views into the optimization
+- [x] **Maximum Sharpe Ratio** (`src/strategies/max_sharpe.py`) — uses trailing mean returns (annualized) with `msr()` optimizer
+- [x] **Risk Parity** (`src/strategies/risk_parity.py`) — SLSQP optimization so each asset contributes equally to portfolio risk
+- [x] **Momentum** (`src/strategies/momentum.py`) — 12-month trailing returns, skip most recent month, equal-weight top decile
+- [x] **Black-Litterman** (`src/strategies/black_litterman.py`) — implied equilibrium returns from equal-weight market proxy, extensible views via `_get_views()` override
 
 ### 4.3 — Strategy Selection
-- [ ] Allow the Lambda handler to accept a strategy name as input (event parameter)
-- [ ] Support running multiple strategies on independent schedules
+- [x] Lambda handler accepts strategy name from event parameter (`event.get("strategy", "gmv")`)
+- [x] Backtest runner (`backtests/run_gmv_backtest.py`) benchmarks all 5 strategies + equal-weight across 4 time windows
+- [x] 29 new tests (89 total) covering protocol conformance, all strategy weights, registry, and strategy selection
+- [ ] Support running multiple strategies on independent schedules (future enhancement)
 
 ---
 
@@ -150,6 +153,6 @@ Goal: Longer-term enhancements once the core platform is solid.
 | 1 | Stabilize & harden existing code | **Done** |
 | 2 | Project structure & CI/CD | **Done** |
 | 3 | Backtesting framework | **Done** |
-| 4 | New strategies | **Medium** |
+| 4 | New strategies | **Done** |
 | 5 | Risk management & monitoring | **Medium** |
 | 6 | Advanced features | **Low — future** |
