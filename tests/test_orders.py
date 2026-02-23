@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from alpaca_trade_api.rest import APIError
 
-from gmv_algo import submit_order
+from src.execution.orders import submit_order
 
 
 class TestSubmitOrder:

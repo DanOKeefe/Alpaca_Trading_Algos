@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Alpaca Trading Algos — daily GMV portfolio rebalancing via Lambda
+
+Parameters:
+  TradingMode:
+    Type: String
+    Default: paper
+    AllowedValues:
+      - paper
+      - live
+    Description: Use 'paper' for paper trading or 'live' for real money
+  ApiKey:
+    Type: String
+    NoEcho: true
+    Description: Alpaca API key (use sam deploy --parameter-overrides to set)
+  ApiSecret:
+    Type: String
+    NoEcho: true
+    Description: Alpaca API secret (use sam deploy --parameter-overrides to set)
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 512
+    Runtime: python3.11
+
+Resources:
+  RebalanceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src.lambda_handler.lambda_handler
+      Environment:
+        Variables:
+          TRADING_MODE: !Ref TradingMode
+          API_KEY: !Ref ApiKey
+          API_SECRET: !Ref ApiSecret
+      Events:
+        DailyRebalance:
+          Type: Schedule
+          Properties:
+            Schedule: cron(35 13 ? * MON-FRI *)
+            Description: Daily portfolio rebalance at 9:35 AM ET (after market open)
+
+Outputs:
+  RebalanceFunctionArn:
+    Description: ARN of the rebalance Lambda function
+    Value: !GetAtt RebalanceFunction.Arn

@@ -38,43 +38,25 @@ Goal: Make the existing code production-grade before adding new features.
 Goal: Set up a professional project layout and automated quality gates.
 
 ### 2.1 — Project Restructure
-```
-Alpaca_Trading_Algos/
-├── src/
-│   ├── strategies/
-│   │   ├── __init__.py
-│   │   └── gmv.py
-│   ├── execution/
-│   │   ├── __init__.py
-│   │   └── orders.py
-│   ├── data/
-│   │   ├── __init__.py
-│   │   └── market_data.py
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   └── logging.py
-│   └── lambda_handler.py
-├── tests/
-│   ├── test_strategies.py
-│   ├── test_orders.py
-│   └── test_market_data.py
-├── backtests/
-├── pyproject.toml
-├── README.md
-├── ROADMAP.md
-└── .github/
-    └── workflows/
-        └── ci.yml
-```
+- [x] Split monolithic `gmv_algo.py` into modular `src/` package:
+  - `src/strategies/gmv.py` — portfolio math (portfolio_return, portfolio_vol, gmv, msr)
+  - `src/execution/orders.py` — order submission logic
+  - `src/data/market_data.py` — ticker fetching, price downloads, snapshots
+  - `src/utils/config.py` — configuration constants and credentials
+  - `src/utils/log_config.py` — logging setup
+  - `src/lambda_handler.py` — rebalance orchestrator and Lambda entry point
+- [x] Add `pyproject.toml` replacing `requirements.txt` / `requirements-dev.txt`
+- [x] Update all tests (35 total, 95% coverage) for new import paths
+- [x] Add `test_market_data.py` with tests for data-fetching functions
+- [x] Add `backtests/` directory placeholder
 
 ### 2.2 — CI/CD Pipeline
-- [ ] GitHub Actions workflow: lint (`ruff`), type-check (`mypy`), test (`pytest`) on every PR
-- [ ] Automated deployment to AWS Lambda on merge to `main` (using SAM, CDK, or Serverless Framework)
+- [x] GitHub Actions workflow (`.github/workflows/ci.yml`): lint (`ruff`), type-check (`mypy`), test (`pytest`) on every PR and push to `main`
+- [ ] Automated deployment to AWS Lambda on merge to `main` (future: add deploy step to CI)
 
 ### 2.3 — Infrastructure as Code
-- [ ] Define the Lambda function, IAM role, CloudWatch Events schedule (e.g., cron for daily rebalance) using AWS SAM or CDK
-- [ ] Store API keys in AWS Secrets Manager or SSM Parameter Store instead of plain environment variables
+- [x] AWS SAM template (`template.yaml`) defining Lambda function, CloudWatch Events cron schedule (daily at 9:35 AM ET, weekdays)
+- [x] API credentials passed via `NoEcho` parameters (deploy with `sam deploy --parameter-overrides`)
 
 ---
 
@@ -165,7 +147,7 @@ Goal: Longer-term enhancements once the core platform is solid.
 | Phase | Focus | Priority |
 |-------|-------|----------|
 | 1 | Stabilize & harden existing code | **Done** |
-| 2 | Project structure & CI/CD | **High** |
+| 2 | Project structure & CI/CD | **Done** |
 | 3 | Backtesting framework | **Medium-High** |
 | 4 | New strategies | **Medium** |
 | 5 | Risk management & monitoring | **Medium** |

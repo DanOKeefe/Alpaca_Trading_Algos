@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from gmv_algo import portfolio_return, portfolio_vol, gmv, msr
+from src.strategies.gmv import gmv, msr, portfolio_return, portfolio_vol
 
 
 class TestPortfolioReturn:
