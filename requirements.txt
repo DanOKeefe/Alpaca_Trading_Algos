@@ -1,0 +1,8 @@
+numpy
+pandas
+yfinance
+scipy
+alpaca-trade-api
+pytz
+python-dateutil
+lxml
